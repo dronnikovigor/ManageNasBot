@@ -151,7 +151,7 @@ async def _fail2ban_logs_menu_keyboard(offset: int):
 
 async def _fail2ban_unban_jail_menu_keyboard():
     keyboard = []
-    for jail in get_jails():
+    for jail in get_jails().split(' '):
         keyboard.append([InlineKeyboardButton(jail, callback_data=f'fail2ban_unban_{jail}_0')])
     keyboard.append([InlineKeyboardButton('↩️ Back', callback_data='fail2ban')])
     return InlineKeyboardMarkup(keyboard)
@@ -289,8 +289,10 @@ def get_jails():
     result = subprocess.run(command, capture_output=True, text=True)
 
     if result.returncode == 0:
-        json_data = json.loads(result.stdout)
-        return [list(item.keys())[0] for item in json_data]
+        jail_list_line = [line for line in result.stdout.split('\n') if 'Jail list' in line][0]
+        jail_list = subprocess.run(['sed', '-E', r's/^[^:]+:[ \t]+//', '-e', 's/,//g'], input=jail_list_line,
+                                   capture_output=True, text=True)
+        return jail_list.stdout.strip()
     else:
         logger.error(result.stderr)
         return None
