@@ -138,6 +138,7 @@ async def _docker_stop(update, _):
 
 
 async def _docker_logs(update, _):
+    tail = 10
     query = update.callback_query
     data = query.data
     container_name = data.split("docker_logs_", 1)[1]
@@ -146,9 +147,9 @@ async def _docker_logs(update, _):
     try:
         logger.debug(f"Getting logs for container '{container_name}'")
         docker_client = docker.from_env()
-        logs = docker_client.containers.get(container_name).logs(stream=True, follow=False, tail=10, timestamps=True)
+        logs = docker_client.containers.get(container_name).logs(stream=True, follow=False, tail=tail, timestamps=True)
         result_logs = ''
-        for i in range(15):
+        for i in range(tail):
             result_logs += next(logs).decode("utf-8")
         if query.message and query.message.text and query.message.text != result_logs.strip():
             keyboard = InlineKeyboardMarkup(
