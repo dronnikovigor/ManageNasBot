@@ -274,7 +274,7 @@ async def _fail2ban_logs_action(update: Update, _) -> None:
     data = query.data
     file = data.split('_')[2]
 
-    log = tailer.tail(open(files[file], encoding='utf-8'), 20)
+    log = tailer.tail(open(files[file], encoding='utf-8'), 10)
     result = '\n'.join(map(str, log))
     if query.message and query.message.text and query.message.text != result:
         await query.edit_message_text(text=f'```{files[file]}\n{result}```',
