@@ -75,10 +75,12 @@ async def _fail2ban_unban_ip_menu(update, _):
 @wrappers.is_chat_allowed()
 async def _fail2ban_logs_menu(update, _):
     query = update.callback_query
+    data = query.data
+    offset = data.split("fail2ban_menu_logs_", 1)[1]
     await query.answer()
     await query.edit_message_text(
         text=await _fail2ban_logs_menu_message(),
-        reply_markup=await _fail2ban_logs_menu_keyboard(),
+        reply_markup=await _fail2ban_logs_menu_keyboard(offset),
         parse_mode=telegram.constants.ParseMode.HTML)
 
 
@@ -113,7 +115,7 @@ async def _fail2ban_menu_keyboard():
                  InlineKeyboardButton('⏹ Stop', callback_data='fail2ban_stop')],
                 [InlineKeyboardButton('⛔️ Ban IP', callback_data='fail2ban_ban'),
                  InlineKeyboardButton('🟢 Unban IP', callback_data='fail2ban_unban')],
-                [InlineKeyboardButton('📄 Logs', callback_data='fail2ban_logs'),
+                [InlineKeyboardButton('📄 Logs', callback_data='fail2ban_menu_logs_0'),
                  InlineKeyboardButton('📌 Status', callback_data='fail2ban_status')],
                 [InlineKeyboardButton('↩️ Back to menu', callback_data='main_menu_back')]
                 ]
@@ -125,9 +127,25 @@ async def _fail2ban_ban_menu_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-async def _fail2ban_logs_menu_keyboard():
-    keyboard = [[InlineKeyboardButton(f"{file}", callback_data=f'fail2ban_logs_{file}')] for file in list(files.keys())]
-    keyboard.append([InlineKeyboardButton('↩️ Back', callback_data='fail2ban')])
+async def _fail2ban_logs_menu_keyboard(offset: int):
+    items_per_column = 10
+    items_per_row = 2
+    items_per_page = items_per_column * items_per_row
+    keyboard = []
+
+    bottom_menu = [InlineKeyboardButton('↩️ Back', callback_data='fail2ban')]
+
+    keys = list(files.keys())
+    for i in range(offset * items_per_page, min(len(keys), (offset + 1) * items_per_page), items_per_row):
+        pair = [InlineKeyboardButton(keys[i], callback_data=f'fail2ban_logs_{keys[i]}'),
+                InlineKeyboardButton(keys[i + 1], callback_data=f'fail2ban_logs_{keys[i + 1]}')] \
+            if i + 1 < len(keys) else [InlineKeyboardButton(keys[i], callback_data=f'fail2ban_logs_{keys[i]}')]
+        keyboard.append(pair)
+    if offset > 0:
+        bottom_menu.append(InlineKeyboardButton('◀️', callback_data=f'fail2ban_menu_logs_{offset - 1}'))
+    if offset < int(len(keys) / items_per_page):
+        bottom_menu.append(InlineKeyboardButton('▶️', callback_data=f'fail2ban_menu_logs_{offset + 1}'))
+    keyboard.append(bottom_menu)
     return InlineKeyboardMarkup(keyboard)
 
 
