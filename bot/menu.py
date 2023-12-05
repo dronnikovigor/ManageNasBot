@@ -11,14 +11,14 @@ def init(bot: Application):
 
 
 @wrappers.is_message_from_bot_owner()
-async def _main_menu(update, context):
+async def _main_menu(update, _):
     await update.message.reply_text(await _main_menu_message(),
                                     reply_markup=await _main_menu_keyboard(),
                                     parse_mode=telegram.constants.ParseMode.HTML)
 
 
 @wrappers.is_chat_allowed()
-async def _main_menu_back(update, context):
+async def _main_menu_back(update, _):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
@@ -39,8 +39,8 @@ async def _main_menu_message():
 
 async def _main_menu_keyboard():
     keyboard = [[InlineKeyboardButton('🔄 System', callback_data='system'),
-                 InlineKeyboardButton('🗳 Docker', callback_data='docker')],
+                 InlineKeyboardButton('🗳 Docker', callback_data='docker_main_menu_0')],
                 [InlineKeyboardButton('⛔️ fail2ban', callback_data='fail2ban'),
-                 InlineKeyboardButton('📁 Files', callback_data='files')]
+                 InlineKeyboardButton('📁 Files', callback_data='sendfiles_menu_0')]
                 ]
     return InlineKeyboardMarkup(keyboard)

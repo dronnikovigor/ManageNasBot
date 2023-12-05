@@ -1,13 +1,12 @@
+import subprocess
 import time
 
 import telegram
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
-from telegram.ext import ContextTypes, Application, CallbackQueryHandler
+from telegram.ext import Application, CallbackQueryHandler
 
 from bot import wrappers
 from bot.logger import logger
-
-APPROVE_REBOOT, APPROVE_SHUTDOWN = range(2)
 
 
 def init(bot: Application):
@@ -22,7 +21,7 @@ def init(bot: Application):
 
 
 @wrappers.is_chat_allowed()
-async def _system_menu(update, context):
+async def _system_menu(update, _):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
@@ -32,7 +31,7 @@ async def _system_menu(update, context):
 
 
 @wrappers.is_chat_allowed()
-async def _system_reboot_menu(update, context):
+async def _system_reboot_menu(update, _):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
@@ -42,7 +41,7 @@ async def _system_reboot_menu(update, context):
 
 
 @wrappers.is_chat_allowed()
-async def _system_shutdown_menu(update, context):
+async def _system_shutdown_menu(update, _):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
@@ -92,14 +91,14 @@ async def _system_shutdown_keyboard():
 
 
 @wrappers.is_chat_allowed()
-async def _system_reboot_action(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def _system_reboot_action(update: Update, _) -> None:
     query = update.callback_query
+    await query.answer()
     action = query.data
     if action.endswith('yes'):
         try:
             logger.info('Restarting system')
-            # todo uncomment
-            # subprocess.run(['reboot'])
+            subprocess.run(['reboot'])
             await query.edit_message_text(text="System is restarting. The bot will be back online shortly.")
         except Exception as e:
             logger.error(f"Failed to restart the system: {e}")
@@ -112,14 +111,14 @@ async def _system_reboot_action(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 @wrappers.is_chat_allowed()
-async def _system_shutdown_action(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def _system_shutdown_action(update: Update, _) -> None:
     query = update.callback_query
+    await query.answer()
     action = query.data
     if action.endswith('yes'):
         try:
             logger.info('Shutting down system')
-            # todo uncomment
-            # subprocess.run(['shutdown', '-h', 'now'])
+            subprocess.run(['shutdown', '-h', 'now'])
             await query.edit_message_text(text="System is shutting down. The bot will be offline now.")
         except Exception as e:
             logger.error(f"Failed to shut down the system: {e}")

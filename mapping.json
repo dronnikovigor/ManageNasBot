@@ -1,0 +1,9 @@
+{
+  "fail2ban_logs": {
+    "fail2ban": "/var/log/fail2ban.log"
+  },
+  "files_to_download": {
+    "fail2ban log": "/var/log/fail2ban.log"
+  }
+}
+
