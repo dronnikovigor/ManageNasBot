@@ -21,7 +21,7 @@ def init(bot: Application):
     bot.add_handler(CallbackQueryHandler(_fail2ban_unban_jail_menu, pattern='^fail2ban_unban$'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_unban_action, pattern='^fail2ban_unban_action_'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_unban_ip_menu, pattern='^fail2ban_unban_'))
-    bot.add_handler(CallbackQueryHandler(_fail2ban_logs_menu, pattern='^fail2ban_logs$'))
+    bot.add_handler(CallbackQueryHandler(_fail2ban_logs_menu, pattern='^fail2ban_menu_logs_'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_logs_action, pattern='^fail2ban_logs_'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_start, pattern='^fail2ban_start$'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_stop, pattern='^fail2ban_stop$'))
