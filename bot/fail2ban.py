@@ -76,7 +76,7 @@ async def _fail2ban_unban_ip_menu(update, _):
 async def _fail2ban_logs_menu(update, _):
     query = update.callback_query
     data = query.data
-    offset = data.split("fail2ban_menu_logs_", 1)[1]
+    offset = int(data.split("fail2ban_menu_logs_", 1)[1])
     await query.answer()
     await query.edit_message_text(
         text=await _fail2ban_logs_menu_message(),
