@@ -280,7 +280,7 @@ async def _fail2ban_logs_action(update: Update, _) -> None:
         await query.edit_message_text(text=f'```{files[file]}\n{result}```',
                                       parse_mode=telegram.constants.ParseMode.MARKDOWN,
                                       reply_markup=InlineKeyboardMarkup(
-                                          [[InlineKeyboardButton('↩️ Back to logs', callback_data='fail2ban_logs'),
+                                          [[InlineKeyboardButton('↩️ Back to logs', callback_data='fail2ban_menu_logs_0'),
                                             InlineKeyboardButton("🔄 Refresh", callback_data=data)]]))
 
 
