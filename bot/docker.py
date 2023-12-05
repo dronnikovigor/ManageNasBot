@@ -66,7 +66,7 @@ async def _docker_menu_keyboard(offset: int):
     items_per_page = items_per_column * items_per_row
     keyboard = []
 
-    containers_sorted = sorted(containers)
+    containers_sorted = sorted(containers, key=lambda x: x.name)
     bottom_menu = [InlineKeyboardButton('↩️ Back to menu', callback_data='main_menu_back')]
 
     for i in range(offset * items_per_page, min(len(containers_sorted), (offset + 1) * items_per_page), items_per_row):

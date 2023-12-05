@@ -266,7 +266,7 @@ async def _fail2ban_logs_action(update: Update, _) -> None:
                                             InlineKeyboardButton("🔄 Refresh", callback_data=data)]]))
 
 
-def get_jails() -> str | None:
+def get_jails():
     command = ['fail2ban-client', 'status']
     result = subprocess.run(command, capture_output=True, text=True)
 
