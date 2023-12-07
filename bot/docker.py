@@ -5,7 +5,7 @@ import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CallbackQueryHandler
 
-from bot import wrappers
+from bot import wrappers, utils
 from bot.logger import logger
 
 
@@ -155,7 +155,7 @@ async def _docker_logs(update, _):
             keyboard = InlineKeyboardMarkup(
                 [[InlineKeyboardButton('↩️ Back to menu', callback_data=f'docker_container_{container_name}'),
                   InlineKeyboardButton("🔄 Refresh", callback_data=f'docker_logs_{container_name}')]])
-            await query.edit_message_text(text=f'```{container_name}\n{result_logs.strip()}```',
+            await query.edit_message_text(text=f'```{container_name}\n{utils.get_last_n_characters(result_logs.strip(), 4000)}```',
                                           parse_mode=telegram.constants.ParseMode.MARKDOWN, reply_markup=keyboard)
     except Exception as e:
         logger.error(f"Exception during getting logs of container '{container_name}': {e}")

@@ -1,23 +1,31 @@
+import ipaddress
 import json
 import socket
 import struct
 import subprocess
 import time
+from warnings import filterwarnings
 
 import tailer
 import telegram
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
-from telegram.ext import Application, CallbackQueryHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, \
+    ReplyKeyboardRemove
+from telegram.ext import Application, CallbackQueryHandler, ConversationHandler, CommandHandler, MessageHandler, \
+    filters, ContextTypes
+from telegram.warnings import PTBUserWarning
 
-from bot import wrappers, mapping
+from bot import wrappers, mapping, utils
 from bot.logger import logger
 
+filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
+
 files = mapping.json_mapping['fail2ban_logs']
+
+SELECT_JAIL, ENTER_IP = range(2)
 
 
 def init(bot: Application):
     bot.add_handler(CallbackQueryHandler(_fail2ban_menu, pattern='^fail2ban$'))
-    bot.add_handler(CallbackQueryHandler(_fail2ban_ban_menu, pattern='^fail2ban_ban$'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_unban_jail_menu, pattern='^fail2ban_unban$'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_unban_action, pattern='^fail2ban_unban_action_'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_unban_ip_menu, pattern='^fail2ban_unban_'))
@@ -26,6 +34,16 @@ def init(bot: Application):
     bot.add_handler(CallbackQueryHandler(_fail2ban_start, pattern='^fail2ban_start$'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_stop, pattern='^fail2ban_stop$'))
     bot.add_handler(CallbackQueryHandler(_fail2ban_status, pattern='^fail2ban_status$'))
+
+    slow_mode_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(_fail2ban_ban_menu, pattern='^fail2ban_ban$')],
+        states={
+            SELECT_JAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, _fail2ban_ban_ip_menu)],
+            ENTER_IP: [MessageHandler(filters.TEXT & ~filters.COMMAND, _fail2ban_ban_action)],
+        },
+        fallbacks=[CommandHandler("cancel", utils.cancel_conv)],
+    )
+    bot.add_handler(slow_mode_handler)
 
 
 ############################# Menu #########################################
@@ -42,13 +60,26 @@ async def _fail2ban_menu(update, _):
 
 
 @wrappers.is_chat_allowed()
-async def _fail2ban_ban_menu(update, _):
+async def _fail2ban_ban_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(
-        text=await _fail2ban_ban_menu_message(),
-        reply_markup=await _fail2ban_ban_menu_keyboard(),
-        parse_mode=telegram.constants.ParseMode.HTML)
+    await context.bot.send_message(chat_id=query.message.chat_id, text=await _fail2ban_ban_jail_menu_message(),
+                                   parse_mode=telegram.constants.ParseMode.HTML,
+                                   reply_markup=await _fail2ban_ban_jail_menu_keyboard())
+    return SELECT_JAIL
+
+
+@wrappers.is_chat_allowed()
+async def _fail2ban_ban_ip_menu(update: Update, context):
+    context.user_data["jail"] = update.message.text
+
+    reply_keyboard = [["/cancel"]]
+    reply_markup = ReplyKeyboardMarkup(keyboard=reply_keyboard, one_time_keyboard=True,
+                                       input_field_placeholder="Enter IP:")
+
+    await update.message.reply_text(text=await _fail2ban_ban_ip_menu_message(), reply_markup=reply_markup,
+                                    parse_mode=telegram.constants.ParseMode.HTML)
+    return ENTER_IP
 
 
 @wrappers.is_chat_allowed()
@@ -95,12 +126,16 @@ async def _fail2ban_unban_jail_menu_message():
     return '<b>Select jail:</b>'
 
 
-async def _fail2ban_ban_menu_message():
-    return '<b>TBD</b>'
+async def _fail2ban_ban_jail_menu_message():
+    return 'Select jail:'
 
 
 async def _fail2ban_unban_ip_menu_message():
-    return '<b>Select ip:</b>'
+    return '<b>Select IP:</b>'
+
+
+async def _fail2ban_ban_ip_menu_message():
+    return 'Enter IP to ban:'
 
 
 async def _fail2ban_logs_menu_message():
@@ -122,9 +157,15 @@ async def _fail2ban_menu_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-async def _fail2ban_ban_menu_keyboard():
-    keyboard = [[InlineKeyboardButton('↩️ Back', callback_data='fail2ban')]]
-    return InlineKeyboardMarkup(keyboard)
+async def _fail2ban_ban_jail_menu_keyboard():
+    reply_keyboard = []
+    for jail in get_jails():
+        reply_keyboard.append([f'{jail}'])
+    reply_keyboard.append(["/cancel"])
+
+    reply_markup = ReplyKeyboardMarkup(keyboard=reply_keyboard, one_time_keyboard=True,
+                                       input_field_placeholder="Select jail:")
+    return reply_markup
 
 
 async def _fail2ban_logs_menu_keyboard(offset: int):
@@ -268,25 +309,59 @@ async def _fail2ban_unban_action(update: Update, _) -> None:
 
 
 @wrappers.is_chat_allowed()
+async def _fail2ban_ban_action(update: Update, context):
+    reply_markup = ReplyKeyboardRemove()
+    try:
+        ip_address = str(ipaddress.ip_address(update.message.text.strip()))
+    except ValueError:
+        logger.error(f"Invalid IP address '{update.message.text}', try again")
+        await update.message.reply_text(text=f"Invalid IP address '{update.message.text}', try again",
+                                        reply_markup=reply_markup)
+        return ConversationHandler.END
+
+    user_data = context.user_data
+    if "jail" in user_data:
+        jail = user_data["jail"]
+        del user_data["jail"]
+
+        try:
+            result = subprocess.run(['fail2ban-client', 'set', jail, 'banip', ip_address], capture_output=True,
+                                    text=True)
+            if result.returncode == 0:
+                await update.message.reply_text(text=f"[{jail}] Successfully banned IP address: '{ip_address}",
+                                                reply_markup=reply_markup)
+            else:
+                logger.error(f"[{jail}] Failed to ban IP address '{ip_address}': {result.returncode}")
+                await update.message.reply_text(
+                    text=f"[{jail}] Failed to ban IP address '{ip_address}': {result.returncode}",
+                    reply_markup=reply_markup)
+        except Exception as e:
+            logger.error(f"[{jail}] Failed to ban IP address '{ip_address}': {e}")
+            await update.message.reply_text(text=f"[{jail}] Failed to ban IP address '{ip_address}': {e}",
+                                            reply_markup=reply_markup)
+    return ConversationHandler.END
+
+
+@wrappers.is_chat_allowed()
 async def _fail2ban_logs_action(update: Update, _) -> None:
     query = update.callback_query
     await query.answer()
     data = query.data
     file = data.split('_')[2]
 
-    log = tailer.tail(open(files[file], encoding='utf-8'), 10)
+    log = tailer.tail(open(files[file], encoding='utf-8'), 15)
     result = '\n'.join(map(str, log))
     if query.message and query.message.text and query.message.text != result:
-        await query.edit_message_text(text=f'```{files[file]}\n{result}```',
+        await query.edit_message_text(text=f'```{files[file]}\n{utils.get_last_n_characters(result, 4000)}```',
                                       parse_mode=telegram.constants.ParseMode.MARKDOWN,
                                       reply_markup=InlineKeyboardMarkup(
-                                          [[InlineKeyboardButton('↩️ Back to logs', callback_data='fail2ban_menu_logs_0'),
+                                          [[InlineKeyboardButton('↩️ Back to logs',
+                                                                 callback_data='fail2ban_menu_logs_0'),
                                             InlineKeyboardButton("🔄 Refresh", callback_data=data)]]))
 
 
 def get_jails():
-    command = ['fail2ban-client', 'banned']
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(['fail2ban-client', 'banned'], capture_output=True, text=True)
 
     if result.returncode == 0:
         jail_list_line = [line for line in result.stdout.split('\n') if 'Jail list' in line][0]
@@ -294,13 +369,12 @@ def get_jails():
                                    capture_output=True, text=True)
         return jail_list.stdout.strip()
     else:
-        logger.error(result.stderr)
+        logger.error(f"Command failed {result.stderr}")
         return None
 
 
 def get_banned_ips(jail_name):
-    command = ['fail2ban-client', 'banned', jail_name]
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(['fail2ban-client', 'banned', jail_name], capture_output=True, text=True)
 
     if result.returncode == 0:
         try:
