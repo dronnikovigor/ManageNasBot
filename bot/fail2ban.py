@@ -192,7 +192,7 @@ async def _fail2ban_logs_menu_keyboard(offset: int):
 
 async def _fail2ban_unban_jail_menu_keyboard():
     keyboard = []
-    for jail in get_jails().split(' '):
+    for jail in get_jails():
         keyboard.append([InlineKeyboardButton(jail, callback_data=f'fail2ban_unban_{jail}_0')])
     keyboard.append([InlineKeyboardButton('↩️ Back', callback_data='fail2ban')])
     return InlineKeyboardMarkup(keyboard)
@@ -364,24 +364,24 @@ def get_jails():
     result = subprocess.run(['fail2ban-client', 'banned'], capture_output=True, text=True)
 
     if result.returncode == 0:
-        jail_list_line = [line for line in result.stdout.split('\n') if 'Jail list' in line][0]
-        jail_list = subprocess.run(['sed', '-E', r's/^[^:]+:[ \t]+//', '-e', 's/,//g'], input=jail_list_line,
-                                   capture_output=True, text=True)
-        return jail_list.stdout.strip()
+        parsed_data = json.loads(result.stdout.replace('\'', '\"'))
+        all_keys = set()
+        for item in parsed_data:
+            all_keys.update(item.keys())
+        return list(all_keys)
     else:
         logger.error(f"Command failed {result.stderr}")
         return None
 
 
 def get_banned_ips(jail_name):
-    result = subprocess.run(['fail2ban-client', 'banned', jail_name], capture_output=True, text=True)
+    result = subprocess.run(['fail2ban-client', 'banned'], capture_output=True, text=True)
 
     if result.returncode == 0:
-        try:
-            jail_info = json.loads(result.stdout)
-            banned_ips = jail_info[jail_name]
-            return banned_ips
-        except json.JSONDecodeError as e:
-            logger.error(f"Error decoding JSON: {e}")
+        parsed_data = json.loads(result.stdout.replace('\'', '\"'))
+        for item in parsed_data:
+            if jail_name in item.keys():
+                return item[jail_name]
     else:
         logger.error(f"Command failed {result.stderr}")
+    return []
