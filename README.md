@@ -5,6 +5,8 @@
 
 Tool for remote managing of NAS via Telegram Bot.
 
+Tested on OpenMediaVault 6.9.  
+
 ## Features:
 
 - Reboot / Shutdown system
