@@ -1,6 +1,7 @@
 # Manage NAS Telegram Bot
 
-[![Python Version](https://www.python.org/downloads/release/python-3110/)](https://img.shields.io/badge/python-3.8_%7C_3.9_%7C_3.10_%7C_3.11-blue)
+![Python Version](https://img.shields.io/badge/python-3.8_%7C_3.9_%7C_3.10_%7C_3.11-blue)
+
 
 Tool for remote managing of NAS via Telegram Bot.
 
@@ -8,7 +9,7 @@ Tool for remote managing of NAS via Telegram Bot.
 
 - Reboot / Shutdown system
 - Manage Docker containers: stop, restart, logs tail
-- Manage **Fail2ban**: start, stop, status of system service, ban / unban IP, logs tail
+- Manage Fail2ban: start, stop, status of system service, ban / unban IP, logs tail
 - Download files
 
 ## Table of Contents
