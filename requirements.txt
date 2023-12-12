@@ -1,1 +1,3 @@
 python-telegram-bot
+docker~=6.1.3
+tailer~=0.4.1
