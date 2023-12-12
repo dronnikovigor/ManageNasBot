@@ -1,8 +1,10 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
 log_formatter = logging.Formatter("[%(asctime)s] p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s")
 
+Path("./logs").mkdir(parents=True, exist_ok=True)
 log_file_name = './logs/log.log'
 handler_log_level = logging.DEBUG
 logger_log_level = logging.DEBUG
