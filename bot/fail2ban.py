@@ -328,7 +328,7 @@ async def _fail2ban_ban_action(update: Update, context):
             result = subprocess.run(['fail2ban-client', 'set', jail, 'banip', ip_address], capture_output=True,
                                     text=True)
             if result.returncode == 0:
-                await update.message.reply_text(text=f"[{jail}] Successfully banned IP address: '{ip_address}",
+                await update.message.reply_text(text=f"[{jail}] Successfully banned IP address: '{ip_address}'",
                                                 reply_markup=reply_markup)
             else:
                 logger.error(f"[{jail}] Failed to ban IP address '{ip_address}': {result.returncode}")
