@@ -226,7 +226,7 @@ async def _fail2ban_start(update: Update, _) -> None:
     await query.answer()
 
     try:
-        result = subprocess.run(["sudo", "service", "fail2ban", "start"], capture_output=True, text=True)
+        result = subprocess.run(["fail2ban-client", "start"], capture_output=True, text=True)
         if result.returncode == 0:
             msg_sent: Message = await query.edit_message_text(text="Successfully started fail2ban client.")
             time.sleep(3)
@@ -246,7 +246,7 @@ async def _fail2ban_stop(update: Update, _) -> None:
     await query.answer()
 
     try:
-        result = subprocess.run(["sudo", "service", "fail2ban", "stop"], capture_output=True, text=True)
+        result = subprocess.run(["fail2ban-client", "stop"], capture_output=True, text=True)
         if result.returncode == 0:
             msg_sent: Message = await query.edit_message_text(text="Successfully stopped fail2ban client.")
             time.sleep(3)
@@ -266,7 +266,7 @@ async def _fail2ban_status(update: Update, _) -> None:
     await query.answer()
 
     try:
-        result = subprocess.run(["sudo", "service", "fail2ban", "status"], capture_output=True, text=True)
+        result = subprocess.run(["fail2ban-client", "status"], capture_output=True, text=True)
         if result.returncode == 0:
             if query.message and query.message.text and query.message.text != result.stdout:
                 keyboard = InlineKeyboardMarkup(
