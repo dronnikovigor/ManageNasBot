@@ -39,8 +39,8 @@ async def _main_menu_message():
 
 async def _main_menu_keyboard():
     keyboard = [[InlineKeyboardButton('🔄 System', callback_data='system'),
-                 InlineKeyboardButton('🗳 Docker', callback_data='docker_main_menu_0')],
-                [InlineKeyboardButton('⛔️ fail2ban', callback_data='fail2ban'),
-                 InlineKeyboardButton('📁 Files', callback_data='sendfiles_menu_0')]
+                 InlineKeyboardButton('⛔️ fail2ban', callback_data='fail2ban')]
+                #  InlineKeyboardButton('🗳 Docker', callback_data='docker_main_menu_0')
+                #  InlineKeyboardButton('📁 Files', callback_data='sendfiles_menu_0')
                 ]
     return InlineKeyboardMarkup(keyboard)
