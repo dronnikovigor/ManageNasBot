@@ -150,8 +150,9 @@ async def _fail2ban_menu_keyboard():
                  InlineKeyboardButton('⏹ Stop', callback_data='fail2ban_stop')],
                 [InlineKeyboardButton('⛔️ Ban IP', callback_data='fail2ban_ban'),
                  InlineKeyboardButton('🟢 Unban IP', callback_data='fail2ban_unban')],
-                [InlineKeyboardButton('📄 Logs', callback_data='fail2ban_menu_logs_0'),
-                 InlineKeyboardButton('📌 Status', callback_data='fail2ban_status')],
+                # [InlineKeyboardButton('📄 Logs', callback_data='fail2ban_menu_logs_0'),
+                #  InlineKeyboardButton('📌 Status', callback_data='fail2ban_status')],
+                [InlineKeyboardButton('📌 Status', callback_data='fail2ban_status')],
                 [InlineKeyboardButton('↩️ Back to menu', callback_data='main_menu_back')]
                 ]
     return InlineKeyboardMarkup(keyboard)
